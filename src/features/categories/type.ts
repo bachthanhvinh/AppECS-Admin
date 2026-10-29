@@ -19,3 +19,4 @@ export type CategoryPayload = {
   slug: string;
   description?: string | null;
 };
+

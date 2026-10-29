@@ -14,6 +14,7 @@ const CategoryPage = () => {
   const [editing, setEditing] = useState<CRUDCategory>();
   const [open, setOpen] = useState(false);
 
+  // tránh lặp vô hạn nếu không dùng useCallback địa chỉ ô nhớ thay đổi mỗi lần bị render nếu không dùng useCallback
   const load = useCallback(async () => {
     setLoading(true);
     try {

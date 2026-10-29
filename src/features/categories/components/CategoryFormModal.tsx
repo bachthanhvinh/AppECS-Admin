@@ -34,8 +34,7 @@ const CategoryFormModal = ({ open, editing, onClose, onSuccess }: Props) => {
     editing: CRUDCategory,
     values: CategoryPayload,
   ) => {
-    const descriptionEdit =
-      values.description === "" ? null : values.description;
+    let descriptionEdit = !values.description ? null : values.description;
 
     await categoryApi.update(editing.id, {
       ...values,
