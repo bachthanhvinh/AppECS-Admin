@@ -6,6 +6,7 @@ import { ROUTES } from "@/config/routes";
 
 import AdminLayout from "./layouts/AdminLayout";
 import { LoginPage, ProtectedRoute } from "@/features/auth";
+import ArticleFormPage from "@/features/articles/ArticleFormPage";
 
 const CategoryPage = lazy(() => import("@/features/categories/CategoryPage"));
 const ArticleListPage = lazy(
@@ -33,14 +34,14 @@ export const router = createBrowserRouter([
           },
           { path: ROUTES.CATEGORIES, element: withSuspense(<CategoryPage />) },
           { path: ROUTES.ARTICLES, element: withSuspense(<ArticleListPage />) },
-          // {
-          //   path: ROUTES.ARTICLE_NEW,
-          //   element: withSuspense(<ArticleFormPage />),
-          // },
-          // {
-          //   path: ROUTES.ARTICLE_EDIT,
-          //   element: withSuspense(<ArticleFormPage />),
-          // },
+          {
+            path: ROUTES.ARTICLE_NEW,
+            element: withSuspense(<ArticleFormPage />),
+          },
+          {
+            path: ROUTES.ARTICLE_EDIT,
+            element: withSuspense(<ArticleFormPage />),
+          },
         ],
       },
     ],
