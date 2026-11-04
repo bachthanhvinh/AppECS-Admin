@@ -6,6 +6,8 @@ import { ROUTES } from "@/config/routes";
 import { articleApi } from "./api";
 import { getErrorMessage } from "@/utils/error";
 import { categoryApi } from "../categories/api";
+import DirectUpload from "@/components/DirectUpload";
+import axiosClient from "@/lib/axiosClient";
 
 const ArticleFormPage = () => {
   const { id } = useParams();
@@ -41,23 +43,51 @@ const ArticleFormPage = () => {
     fetchApi();
   }, [id, form, message]);
 
-  const onFinish = async (values: ArticlePayload) => {
-    console.log(values);
+  const onFinish = async (values: any) => {
     setSaving(true);
     try {
-      if (id) {
-        const update = await articleApi.update(id, values);
-        if (update) {
-          message.success("Cập nhật bài viết thành công");
-          navigate(ROUTES.ARTICLES);
-        }
-      } else {
-        const create = await articleApi.create(values);
-        if (create) {
-          message.success("Tạo bài viết thành công");
-          navigate(ROUTES.ARTICLES);
-        }
+      let finalImageUrl = values.thumbnail_url;
+      let finalPublicImageId;
+      if (values.thumbnail_url instanceof File) {
+        const file = values.thumbnail_url;
+
+        const signatureRes = await axiosClient.get("upload/signature");
+        const { timestamp, signature, apiKey, cloudName, folder } =
+          signatureRes.data;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("api_key", apiKey);
+        formData.append("timestamp", timestamp.toString());
+        formData.append("signature", signature);
+        formData.append("folder", folder);
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+          { method: "POST", body: formData },
+        );
+        const data = await uploadRes.json();
+
+        if (data.error) throw new Error("Upload ảnh thất bại");
+
+        finalImageUrl = data.secure_url;
+        finalPublicImageId = data.public_id;
       }
+
+      const payload = {
+        ...values,
+        thumbnail_url: finalImageUrl,
+        public_image_id: finalPublicImageId,
+      };
+
+      if (id) {
+        await articleApi.update(id, payload);
+        message.success("Cập nhật bài viết thành công");
+      } else {
+        await articleApi.create(payload);
+        message.success("Tạo bài viết thành công");
+      }
+      navigate(ROUTES.ARTICLES);
     } catch (e) {
       message.error(getErrorMessage(e));
     } finally {
@@ -98,12 +128,10 @@ const ArticleFormPage = () => {
           />
         </Form.Item>
 
-        {/* Khớp tên với thumbnail_url ở DTO Backend */}
         <Form.Item name="thumbnail_url" label="Link ảnh đại diện">
-          <Input placeholder="https://..." />
+          <DirectUpload />
         </Form.Item>
 
-        {/* Khớp tên với description ở DTO Backend */}
         <Form.Item
           name="description"
           label="Mô tả ngắn"
@@ -112,7 +140,6 @@ const ArticleFormPage = () => {
           <Input.TextArea rows={3} placeholder="Mô tả tóm tắt bài viết" />
         </Form.Item>
 
-        {/* Form Item trạng thái xuất bản is_published */}
         <Form.Item
           name="is_published"
           label="Trạng thái"
