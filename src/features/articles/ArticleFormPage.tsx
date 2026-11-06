@@ -6,8 +6,13 @@ import { ROUTES } from "@/config/routes";
 import { articleApi } from "./api";
 import { getErrorMessage } from "@/utils/error";
 import { categoryApi } from "../categories/api";
+import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
+import {
+  clearPendingImages,
+  createCloudinaryUploader,
+  uploadPendingImagesInHtml,
+} from "@/lib/pending-images";
 import DirectUpload from "@/components/DirectUpload";
-import axiosClient from "@/lib/axiosClient";
 
 const ArticleFormPage = () => {
   const { id } = useParams();
@@ -46,38 +51,25 @@ const ArticleFormPage = () => {
   const onFinish = async (values: any) => {
     setSaving(true);
     try {
+      const upload = createCloudinaryUploader();
+
       let finalImageUrl = values.thumbnail_url;
       let finalPublicImageId;
       if (values.thumbnail_url instanceof File) {
-        const file = values.thumbnail_url;
-
-        const signatureRes = await axiosClient.get("upload/signature");
-        const { timestamp, signature, apiKey, cloudName, folder } =
-          signatureRes.data;
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("api_key", apiKey);
-        formData.append("timestamp", timestamp.toString());
-        formData.append("signature", signature);
-        formData.append("folder", folder);
-
-        const uploadRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          { method: "POST", body: formData },
-        );
-        const data = await uploadRes.json();
-
-        if (data.error) throw new Error("Upload ảnh thất bại");
-
-        finalImageUrl = data.secure_url;
-        finalPublicImageId = data.public_id;
+        const uploaded = await upload(values.thumbnail_url);
+        finalImageUrl = uploaded.url;
+        finalPublicImageId = uploaded.publicId;
       }
+
+      const { html: finalContent } = await uploadPendingImagesInHtml(
+        values.content,
+        upload,
+      );
 
       const payload = {
         ...values,
+        content: finalContent,
         thumbnail_url: finalImageUrl,
-        public_image_id: finalPublicImageId,
       };
 
       if (id) {
@@ -87,14 +79,16 @@ const ArticleFormPage = () => {
         await articleApi.create(payload);
         message.success("Tạo bài viết thành công");
       }
+
+      clearPendingImages();
       navigate(ROUTES.ARTICLES);
+      console.log("values", values);
     } catch (e) {
       message.error(getErrorMessage(e));
     } finally {
       setSaving(false);
     }
   };
-
   if (loading) return <Spin className="flex justify-center my-10" />;
 
   return (
@@ -106,59 +100,61 @@ const ArticleFormPage = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
-        className="max-w-3xl"
+        className="max-w-5xl"
         initialValues={{ is_published: true }}
       >
-        <Form.Item
-          name="title"
-          label="Tiêu đề"
-          rules={[{ required: true, message: "Vui lòng nhập tiêu đề" }]}
-        >
-          <Input placeholder="Nhập tiêu đề bài viết" />
-        </Form.Item>
+        <div className="max-w-2xl">
+          <Form.Item
+            name="title"
+            label="Tiêu đề"
+            rules={[{ required: true, message: "Vui lòng nhập tiêu đề" }]}
+          >
+            <Input placeholder="Nhập tiêu đề bài viết" />
+          </Form.Item>
 
-        <Form.Item
-          name="category_id"
-          label="Danh mục"
-          rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
-        >
-          <Select
-            placeholder="Chọn danh mục"
-            options={categories.map((c) => ({ value: c.id, label: c.name }))}
-          />
-        </Form.Item>
+          <Form.Item
+            name="category_id"
+            label="Danh mục"
+            rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+          >
+            <Select
+              placeholder="Chọn danh mục"
+              options={categories.map((c) => ({ value: c.id, label: c.name }))}
+            />
+          </Form.Item>
 
-        <Form.Item name="thumbnail_url" label="Link ảnh đại diện">
-          <DirectUpload />
-        </Form.Item>
+          <Form.Item name="thumbnail_url" label="Link ảnh đại diện">
+            <DirectUpload />
+          </Form.Item>
 
-        <Form.Item
-          name="description"
-          label="Mô tả ngắn"
-          rules={[{ required: true, message: "Vui lòng nhập mô tả ngắn" }]}
-        >
-          <Input.TextArea rows={3} placeholder="Mô tả tóm tắt bài viết" />
-        </Form.Item>
+          <Form.Item
+            name="description"
+            label="Mô tả ngắn"
+            rules={[{ required: true, message: "Vui lòng nhập mô tả ngắn" }]}
+          >
+            <Input.TextArea rows={3} placeholder="Mô tả tóm tắt bài viết" />
+          </Form.Item>
 
-        <Form.Item
-          name="is_published"
-          label="Trạng thái"
-          rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
-        >
-          <Select
-            options={[
-              { value: true, label: "Xuất bản (Công khai)" },
-              { value: false, label: "Bản nháp (Ẩn)" },
-            ]}
-          />
-        </Form.Item>
+          <Form.Item
+            name="is_published"
+            label="Trạng thái"
+            rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
+          >
+            <Select
+              options={[
+                { value: true, label: "Xuất bản (Công khai)" },
+                { value: false, label: "Bản nháp (Ẩn)" },
+              ]}
+            />
+          </Form.Item>
+        </div>
 
         <Form.Item
           name="content"
           label="Nội dung"
           rules={[{ required: true, message: "Vui lòng nhập nội dung" }]}
         >
-          <Input.TextArea rows={12} placeholder="Nội dung chi tiết bài viết" />
+          <SimpleEditor />
         </Form.Item>
 
         <Button type="primary" htmlType="submit" loading={saving}>
