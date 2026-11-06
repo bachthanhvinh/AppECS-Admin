@@ -1,0 +1,129 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap");
+// .prose img[data-align="left"] {
+//   margin-left: 0;
+//   margin-right: auto;
+// }
+// .prose img[data-align="right"] {
+//   margin-left: auto;
+//   margin-right: 0;
+// }
+.simple-editor-wrapper {
+  /* ===== Theme sáng (mặc định) ===== */
+  --se-bg: #ffffff;
+  --se-text: #1f2937;
+  --se-border: #d9d9d9;
+  --se-toolbar-border: #f0f0f0;
+  --se-icon: #6b7280;
+  --se-icon-hover: #111827;
+  --se-hover-bg: #f3f4f6;
+  --se-active-bg: #eef2ff;
+  --se-active-icon: #4f46e5;
+
+  /* Map sang biến của template Tiptap */
+  --tt-toolbar-height: 44px;
+  --tt-bg-color: var(--se-bg);
+  --tt-theme-text: var(--se-text);
+  --tt-toolbar-bg-color: var(--se-bg);
+  --tt-toolbar-border-color: var(--se-toolbar-border);
+  --tt-button-default-icon-color: var(--se-icon);
+  --tt-button-hover-icon-color: var(--se-icon-hover);
+  --tt-button-hover-bg-color: var(--se-hover-bg);
+  --tt-button-active-bg-color: var(--se-active-bg);
+  --tt-button-active-icon-color: var(--se-active-icon);
+  --tt-button-default-text-color: var(--se-icon);
+  --tt-button-hover-text-color: var(--se-icon-hover);
+  --tt-button-active-text-color: var(--se-active-icon);
+
+  color-scheme: light;
+  position: relative;
+  width: 100%;
+  max-height: 650px;
+  overflow: auto;
+  color: var(--se-text);
+  background: var(--se-bg);
+  border: 1px solid var(--se-border);
+  border-radius: 8px;
+
+  /* ===== Theme tối ===== */
+  &.dark {
+    --se-bg: #1f1f1f;
+    --se-text: #e5e7eb;
+    --se-border: #3f3f46;
+    --se-toolbar-border: #333333;
+    --se-icon: #9ca3af;
+    --se-icon-hover: #ffffff;
+    --se-hover-bg: #333333;
+    --se-active-bg: #312e81;
+    --se-active-icon: #a5b4fc;
+
+    color-scheme: dark;
+  }
+
+  .tiptap-toolbar {
+    position: sticky !important;
+    top: 0;
+    bottom: auto !important;
+    z-index: 10;
+    width: 100%;
+    height: auto;
+    min-height: var(--tt-toolbar-height);
+    padding: 6px 8px;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: var(--se-bg) !important;
+    border-bottom: 1px solid var(--se-toolbar-border) !important;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .tiptap-toolbar .tiptap-separator {
+    background: var(--se-toolbar-border);
+  }
+}
+
+.tiptap.ProseMirror {
+  font-family: "DM Sans", sans-serif;
+}
+
+.simple-editor-content {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.simple-editor-content .tiptap.ProseMirror.simple-editor {
+  flex: 1;
+  min-height: 320px;
+  padding: 1.5rem 2rem 3rem;
+  color: var(--se-text);
+  background: var(--se-bg);
+}
+
+.simple-editor-wrapper
+  .tiptap.ProseMirror
+  :is(h1, h2, h3, h4, p, li, blockquote) {
+  color: inherit;
+}
+
+.simple-editor-search-and-replace {
+  position: absolute;
+  top: calc(var(--tt-toolbar-height) + 0.5rem);
+  right: 0.5rem;
+  z-index: 51;
+  max-height: 320px;
+}
+
+@media screen and (max-width: 480px) {
+  .simple-editor-search-and-replace {
+    left: 0.5rem;
+    width: auto;
+  }
+
+  .simple-editor-content .tiptap.ProseMirror.simple-editor {
+    padding: 1rem 1rem 2rem;
+  }
+}
