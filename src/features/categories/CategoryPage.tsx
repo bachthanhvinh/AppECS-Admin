@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { categoryApi } from "./api";
 import { App, Button, Popconfirm, Space, Table } from "antd";
 import { getErrorMessage } from "@/utils/error";
 import { PlusOutlined } from "@ant-design/icons";
 import type { Category, CRUDCategory } from "./type";
 import type { ColumnsType } from "antd/es/table";
 import CategoryFormModal from "./components/CategoryFormModal";
+import { paginationApi } from "@/utils/pagination";
+import { categoryApi } from "./api";
 
 const CategoryPage = () => {
   const { message } = App.useApp();
@@ -13,29 +14,38 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<CRUDCategory>();
   const [open, setOpen] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [currenPage, setCurrenPage] = useState(1);
+  const pageFix = 8;
 
   // tránh lặp vô hạn nếu không dùng useCallback địa chỉ ô nhớ thay đổi mỗi lần bị render nếu không dùng useCallback
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await categoryApi.getAll();
-      setCategories(res.data);
-    } catch (err) {
-      message.error(getErrorMessage(err, "can not loading category"));
-    } finally {
-      setLoading(false);
-    }
-  }, [message]);
+  const load = useCallback(
+    async (page = 1, pageSize = 8) => {
+      setLoading(true);
+      try {
+        const res = await paginationApi.pagination(page, pageSize, "categories");
+        setCategories(res.items);
+        setTotal(res.total);
+        setCurrenPage(page);
+        console.log(`items=${res.i}, total=${res.total}`);
+      } catch (err) {
+        message.error(getErrorMessage(err, "can not loading category"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [message],
+  );
 
   useEffect(() => {
-    load();
+    load(1, pageFix);
   }, [load]);
 
   const handleDelete = async (id: string) => {
     try {
       await categoryApi.remove(id);
       message.success("Đã xóa");
-      load();
+      load(1, pageFix);
     } catch (err) {
       message.error(getErrorMessage(err));
     }
@@ -81,6 +91,14 @@ const CategoryPage = () => {
         dataSource={categories}
         columns={columns}
         loading={loading}
+        pagination={{
+          total: total,
+          pageSize: 8,
+          current: currenPage,
+          onChange: (page, pageSize) => {
+            load(page, pageSize);
+          },
+        }}
       />
       <CategoryFormModal
         open={open}
@@ -88,7 +106,7 @@ const CategoryPage = () => {
         onClose={() => setOpen(false)}
         onSuccess={() => {
           setOpen(false);
-          load();
+          load(1, pageFix);
         }}
       />
     </>

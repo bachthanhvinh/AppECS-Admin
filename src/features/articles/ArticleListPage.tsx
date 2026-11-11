@@ -8,38 +8,48 @@ import { ROUTES } from "@/config/routes";
 import { getErrorMessage } from "@/utils/error";
 import { articleApi } from "./api";
 import type { Article } from "./type";
+import { paginationApi } from "@/utils/pagination";
 
 export default function ArticleListPage() {
   const { message } = App.useApp();
   const navigate = useNavigate();
   const [data, setData] = useState<Article[]>([]);
   const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [currenPage, setCurrenPage] = useState(1);
+  const pageFix = 8;
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      
-      setData(await articleApi.getAll());
-    } catch (err) {
-      message.error(getErrorMessage(err, "Không tải được bài viết"));
-    } finally {
-      setLoading(false);
-    }
-  }, [message]);
+  const load = useCallback(
+    async (page = 1, pageSize = 8) => {
+      setLoading(true);
+      try {
+        const res = await paginationApi.pagination(page, pageSize, "articles");
+        setData(res.items);
+        setTotal(res.total);
+        setCurrenPage(page);
+      } catch (err) {
+        message.error(getErrorMessage(err, "Không tải được bài viết"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [message],
+  );
 
   useEffect(() => {
-    load();
+    load(1, pageFix);
   }, [load]);
 
   const handleDelete = async (id: string) => {
     try {
       await articleApi.remove(id);
       message.success("Đã xóa");
-      load();
+      load(1, pageFix);
     } catch (err) {
       message.error(getErrorMessage(err));
     }
   };
+  console.log(`data = ${data}`);
 
   const columns: ColumnsType<Article> = [
     { title: "Tiêu đề", dataIndex: "title" },
@@ -86,6 +96,14 @@ export default function ArticleListPage() {
         columns={columns}
         dataSource={data}
         loading={loading}
+        pagination={{
+          pageSize: pageFix,
+          total: total,
+          current: currenPage,
+          onChange: (page, pageSite) => {
+            load(page, pageSite);
+          },
+        }}
       />
     </>
   );
