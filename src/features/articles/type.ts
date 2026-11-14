@@ -8,6 +8,7 @@ export interface Article {
   category_id: string;
   author_id: string;
   is_published: boolean;
+  category_name: string;
   published_at: Date | null;
   created_at: Date;
   updated_at: Date;
