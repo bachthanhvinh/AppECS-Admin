@@ -23,11 +23,15 @@ const CategoryPage = () => {
     async (page = 1, pageSize = 8) => {
       setLoading(true);
       try {
-        const res = await paginationApi.pagination(page, pageSize, "categories");
-        setCategories(res.items);
-        setTotal(res.total);
+        const res = await paginationApi.pagination(
+          page,
+          pageSize,
+          "categories",
+        );
+        setCategories(res.data.items);
+        setTotal(res.data.total);
         setCurrenPage(page);
-        console.log(`items=${res.i}, total=${res.total}`);
+        console.log(`items=${res.data.items}, total=${res.data.total}`);
       } catch (err) {
         message.error(getErrorMessage(err, "can not loading category"));
       } finally {
